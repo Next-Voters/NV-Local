@@ -1,0 +1,78 @@
+you are a system designer that is able to build out a mermiad diagram and render it for me.
+
+the system design is for an ai agent that holds politiicians accountable to their actions.
+
+This is the functionality that you should put into the design formatted:
+
+- it first pulls from data from the open north api
+
+This is the example of the api request (we get the lat and lang through a module in python):
+
+https://represent.opennorth.ca/representatives/house-of-commons/?point=45.524%2C-73.596
+
+
+The example response wil be this:
+
+
+  "objects": [
+    {
+      "name": "Rachel Bendayan",
+      "district_name": "Outremont",
+      "elected_office": "MP",
+      "source_url": "https://www.ourcommons.ca/Members/en/search?caucusId=all&province=all",
+      "first_name": "Rachel",
+      "last_name": "Bendayan",
+      "party_name": "Liberal",
+      "email": "Rachel.Bendayan@parl.gc.ca",
+      "url": "https://www.ourcommons.ca/Members/en/rachel-bendayan(88567)",
+      "personal_url": "",
+      "photo_url": "https://www.ourcommons.ca/Content/Parliamentarians/Images/OfficialMPPhotos/45/BendayanRachel_Lib.jpg",
+      "gender": "F",
+      "offices": [
+        {
+          "fax": "1 613 995-7691",
+          "tel": "1 613 995-7691",
+          "type": "legislature",
+          "postal": "House of Commons\nOttawa ON  K1A 0A6"
+        },
+        {
+          "fax": "1 514 736-2726",
+          "tel": "1 514 736-2727",
+          "type": "constituency",
+          "postal": "Main office - Montréal\n302-154 avenue Laurier Ouest\nMontréal QC  H2T 2N7"
+        }
+      ],
+      "extra": {
+        "roles": [
+          "Parliamentary Secretary to the Prime Minister (Parliamentary Secretary)"
+        ],
+        "preferred_languages": [
+          "French  English"
+        ]
+      },
+      "representative_set_name": "House of Commons",
+      "related": {
+        "representative_set_url": "/representative-sets/house-of-commons/",
+        "boundary_url": "/boundaries/federal-electoral-districts-2023-representation-order/24053/"
+      }
+    }
+  ],
+  "meta": {
+    "offset": 0,
+    "limit": 20,
+    "total_count": 1,
+    "previous": null,
+    "next": null
+  }
+}
+
+
+Then we run the deep research agent that will take the name of the candidate and the district name and search for 3 things: political activities, personal controvereries, and one more thing (you decide) 
+
+Each one will be given to a seperate agent (multi agent system) with a manager pattern. 
+
+Once they get responses, the supervisor agent will keep the html content and send it off to another llm that is trained/meant to summarize the html content. 
+
+This model will also create seperate responses for adults (semi formal) and kids (using slangs and culturally relevant terms which we can pull and fine tune an llm to generate text in that way)
+
+This way both adults and kids can meanginfully engage with the content.
