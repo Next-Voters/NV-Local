@@ -1,7 +1,7 @@
 import operator
 from dotenv import load_dotenv
 
-from typing import TypedDict, Annotated, NotRequired
+from typing import TypedDict, Annotated
 
 from langchain_core.messages import BaseMessage
 from langchain_openai import ChatOpenAI
@@ -9,6 +9,7 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.prebuilt import ToolNode
 
 from utils.agents import should_continue
+from tools.scraper_builder import code_generator, python_repl, debugger
 
 load_dotenv()
 
@@ -21,9 +22,7 @@ class ScraperBuilderState(TypedDict):
     messages: Annotated[list[BaseMessage], operator.add]
 
 
-# === TOOL LIST ===
-
-tools = []
+tools = [code_generator, python_repl, debugger]
 
 
 # === FUNCTIONS FOR NODES ===
