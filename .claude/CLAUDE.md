@@ -15,6 +15,7 @@
 - **Always use `model=` parameter (not `llm=`)** when calling `create_react_agent` in the current LangGraph version (1.0.10).
 - **Never use `langgraph-supervisor`** — it has been removed from requirements and is not part of this architecture.
 - **Never waste time praising me for good actions or trying to inflate my ego. Stay true to simply helping me engineer a world-class systems.**
+- **Never make __init__.py files when building new subdirectories**
 ---
 
 ## 🎯 PROJECT CONTEXT
