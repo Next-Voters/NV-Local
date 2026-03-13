@@ -35,7 +35,9 @@ class LegislationFinderState(TypedDict):
 tools = [web_search, reflection_tool, reliability_analysis]
 
 
-# === FUNCTIONS FOR NODES ===def call_model(state: LegislationFinderState) -> LegislationFinderState:
+# === FUNCTIONS FOR NODES ===
+
+def call_model(state: LegislationFinderState) -> LegislationFinderState:
     """Call the LLM with the current state, including reflection context."""
     messages = state["messages"]
     city = state.get("city", "Unknown")
