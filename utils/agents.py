@@ -1,59 +1,56 @@
 """Shared utilities for LangGraph ReAct agents."""
 
-from typing import TypeVar, Callable
+import operator
+from typing import TypeVar, TypedDict, Callable, Union, Annotated, NotRequired
 
+from langchain_core.messages import BaseMessage
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, START, END
 from langgraph.prebuilt import ToolNode
 
-# Generic state type for type hints
+from utils.models import ReflectionEntry
+
 StateType = TypeVar("StateType")
+
+_REFLECTION_PREAMBLE = "Here are previous reflections. Use as context to drive your next actions/decisions:\n\n"
+
+
+class BaseAgentState(TypedDict):
+    """Shared state fields that every ReAct agent inherits.
+
+    Agent-specific states extend this with their own fields.
+    """
+
+    messages: Annotated[list[BaseMessage], operator.add]
+    reflection_list: NotRequired[Annotated[list[ReflectionEntry], operator.add]]
 
 
 class BaseReActAgent:
-    """Base class for ReAct agents with customizable state, tools, and dynamic prompts.
+    """Base class for ReAct agents with shared reflection handling.
 
-    This class encapsulates the core ReAct loop logic:
-    1. Call model with dynamically built system prompt and messages
-    2. If model returns tool calls, execute them
-    3. Loop back to model with tool results
-    4. End when model returns no tool calls
+    Every agent's state must include a `reflection_list` field
+    (list[ReflectionEntry]) so the base class can prepend accumulated
+    reflections to the system prompt on each model call.
 
-    Instances customize:
-    - State schema (TypedDict)
-    - Tools list
-    - Prompt builder (function that takes state and returns formatted system prompt)
+    system_prompt accepts:
+      - str: used as-is on every call (most agents)
+      - callable(state) -> str: called each invocation for dynamic formatting
     """
 
     def __init__(
         self,
         state_schema: type,
         tools: list,
-        prompt_builder: Callable[[StateType], str],
-        # Optional
+        system_prompt: Union[str, Callable[[StateType], str]],
+        # Optional LLM config
         model_name: str = "gpt-4o",
         temperature: float = 0.0,
         max_tokens: int = 2000,
         timeout: int = 30,
     ):
-        """Initialize the ReAct agent.
-
-        Args:
-            state_schema: A TypedDict class defining the agent's state structure.
-                          Must include 'messages' key with Annotated[list[BaseMessage], operator.add].
-            tools: List of LangChain tools the agent can use.
-            prompt_builder: A callable that takes the current state and returns a formatted
-                           system prompt string. This is invoked on each model call to ensure
-                           the prompt reflects the current state (e.g., updated reflections).
-
-            model_name: OpenAI model name.
-            temperature: Model temperature.
-            max_tokens: Maximum tokens for model response.
-            timeout: Request timeout in seconds.
-        """
         self.state_schema = state_schema
         self.tools = tools
-        self.prompt_builder = prompt_builder
+        self.system_prompt = system_prompt
 
         self.model = ChatOpenAI(
             model=model_name,
@@ -62,40 +59,39 @@ class BaseReActAgent:
             timeout=timeout,
         )
 
+    def _build_prompt(self, state: StateType) -> str:
+        """Shared reflection context + agent prompt (static or dynamic)."""
+        reflection_list: list[ReflectionEntry] = state.get("reflection_list", [])
+
+        reflection_section = ""
+        if reflection_list:
+            entries = []
+            for r in reflection_list:
+                gaps = ", ".join(r.gaps_identified) if r.gaps_identified else "None"
+                entries.append(
+                    f"- {r.reflection}\n  Gaps: {gaps}\n  Next action: {r.next_action}"
+                )
+            reflection_section = _REFLECTION_PREAMBLE + "\n".join(entries) + "\n\n"
+
+        agent_prompt = (
+            self.system_prompt(state)
+            if callable(self.system_prompt)
+            else self.system_prompt
+        )
+
+        return reflection_section + agent_prompt
+
     def _should_continue(self, state: StateType) -> bool:
-        """Determine if the agent should continue or end based on if there is a tool call to be made.
-
-        This is a reusable function for ReAct agents that checks the last message
-        for tool calls to determine if the agentic loop should continue.
-
-        Args:
-            state: The agent state with a 'messages' key
-
-        Returns:
-            bool: True if there are tool calls to process, False otherwise
-        """
+        """Check if the last message has tool calls to process."""
         last_message = state["messages"][-1]
-
         if hasattr(last_message, "tool_calls") and last_message.tool_calls:
             return True
-
         return False
 
     def _call_model(self, state: StateType) -> dict:
-        """Call the LLM with the current state and dynamically built system prompt.
-
-        The system prompt is built fresh on each invocation using the prompt_builder
-        callback, ensuring it reflects the current state (e.g., updated reflections).
-
-        Args:
-            state: Current agent state.
-
-        Returns:
-            Dict with 'messages' key containing the model response.
-        """
-
+        """Call the LLM with reflection-enriched system prompt + messages."""
         messages = state["messages"]
-        system_prompt = self.prompt_builder(state)
+        system_prompt = self._build_prompt(state)
         model_with_tools = self.model.bind_tools(self.tools)
 
         response = model_with_tools.invoke(
@@ -105,12 +101,7 @@ class BaseReActAgent:
         return {"messages": [response]}
 
     def build(self):
-        """Build and compile the agent graph.
-
-        Returns:
-            A compiled LangGraph that can be invoked with state.
-        """
-
+        """Build and compile the LangGraph ReAct loop."""
         tool_node = ToolNode(self.tools)
 
         graph = StateGraph(self.state_schema)
@@ -121,10 +112,7 @@ class BaseReActAgent:
         graph.add_conditional_edges(
             "call_model",
             self._should_continue,
-            {
-                True: "tool_node",
-                False: END,
-            },
+            {True: "tool_node", False: END},
         )
         graph.add_edge("tool_node", "call_model")
 
