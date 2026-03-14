@@ -1,28 +1,18 @@
 import httpx
 from dotenv import load_dotenv
-from typing import TypedDict, NotRequired
 
 from langchain_core.runnables import RunnableLambda
 from langchain_openai import ChatOpenAI
 
 from agents.legislation_finder import legislation_finder_agent
 from utils.models import WriterOutput
+from utils.typed_dicts import ChainData
 from utils.prompts import writer_sys_prompt
 
 load_dotenv()
 
 model = ChatOpenAI(model="gpt-4o-mini")
 
-class LegislationContent(TypedDict):
-    source: str
-    content: str
-    error: NotRequired[str]
-
-class ChainData(TypedDict):
-    city: NotRequired[str]
-    legislation_sources: NotRequired[str]
-    legislation_content: NotRequired[list[LegislationContent]]
-    final_output: NotRequired[WriterOutput]
 
 def run_legislation_finder(inputs: ChainData) -> ChainData:
     """Run the legislation finder agent as a node."""
@@ -42,9 +32,7 @@ def run_content_retrieval(inputs: ChainData) -> ChainData:
             markdown_url = f"https://markdown.new/{source}"
             response = httpx.get(markdown_url, timeout=30, follow_redirects=True)
             response.raise_for_status()
-            legislation_content.append(
-                {"source": source, "content": response.text}
-            )
+            legislation_content.append({"source": source, "content": response.text})
         except httpx.HTTPError as e:
             legislation_content.append(
                 {"source": source, "content": None, "error": str(e)}

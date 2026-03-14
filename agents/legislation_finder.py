@@ -1,30 +1,10 @@
 from datetime import datetime, timedelta
 
-from typing import NotRequired, Annotated, TypedDict
-
-import operator
-
 from base_agent_template import BaseReActAgent
 from tools.legislation_finder import web_search, reliability_analysis
 
-from utils.typed_dicts import BaseAgentState
+from utils.typed_dicts import LegislationFinderState
 from utils.prompts import legislation_finder_sys_prompt
-
-
-# === STATE DEFINITION ===
-
-class ReliableLegislationSources(TypedDict):
-    url: str
-    organization: str
-
-class LegislationFinderState(BaseAgentState):
-    """Agent-specific state for the legislation finder agent."""
-
-    city: NotRequired[str]
-    raw_legislation_sources: NotRequired[Annotated[list[ReliableLegislationSources], operator.add]]
-    reliable_legislation_sources: NotRequired[
-        Annotated[list[str], operator.add]
-    ]
 
 
 # === AGENT CONSTRUCTION ===
