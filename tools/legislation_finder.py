@@ -31,7 +31,7 @@ tavily_client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
 
 
 @tool
-def web_search(query: str, max_results: int = 5) -> str:
+def web_search(query: str, max_results: int = 5) -> Command | str:
     """Search the web for legislation related to a specific municipality or topic.
 
     Uses the Tavily search API to find recent, relevant legislation pages.
@@ -73,7 +73,7 @@ def web_search(query: str, max_results: int = 5) -> str:
         return Command(update={"raw_legislation_sources": new_formatted_results})
 
     except Exception as e:
-        return f"Error performing search: {str(e)}"
+        return f"Error:{e}"
 
 
 @tool
