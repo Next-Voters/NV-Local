@@ -5,6 +5,7 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.prebuilt import ToolNode
 
 from utils.models import ReflectionEntry
+from utils.typed_dicts import BaseAgentState
 from tools.base_agent_tools import reflection_tool
 
 StateType = TypeVar("StateType")
@@ -25,7 +26,7 @@ class BaseReActAgent:
 
     def __init__(
         self,
-        state_schema: type,
+        state_schema: Type[BaseAgentState],
         tools: list,
         system_prompt: Union[str, Callable[[StateType], str]],
         # Optional LLM config
