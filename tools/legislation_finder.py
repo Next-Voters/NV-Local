@@ -101,6 +101,7 @@ def reliability_analysis(
                 "reliable_legislation_sources": [],
             }
         )
+
     sources_with_context = []
 
     for item in raw_legislation_sources:
