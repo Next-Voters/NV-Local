@@ -260,7 +260,14 @@ reliability_judgment_prompt = """
 You are a source classification engine for a civic legislation research pipeline. You do not summarize, explain, or advise — you classify and output structured JSON. Nothing else.
 
 ## Task
-Given a list of sources with their Wikidata context, assign each source a reliability tier and decide whether it should be accepted for civic legislation research.
+Given a list of sources with their Wikidata context, assign each source a reliability tier and decide whether it should be accepted for civic legislation research for the city of {input_city}.
+
+## CRITICAL: Jurisdiction Matching
+You MUST reject any source that is NOT from the specified city's municipality or local government. Specifically:
+- Reject provincial/state government sources (e.g., Ontario Parliament, state legislature)
+- Reject federal government sources
+- Reject sources from neighboring cities or other jurisdictions
+- Only accept sources from {input_city} city council, municipal government, or local agencies
 
 ## Input
 Each source includes:
@@ -271,10 +278,10 @@ Each source includes:
 ## Classification Tiers
 
 **Tier 1 — highly_reliable**
-Accept. Use when Wikidata confirms any of:
-- Government agency, municipality, city council, legislative body, federal/state agency
-- Official legislative platform (Legistar, Granicus, eScribe, Municode)
-- `.gov` domain with direct legislation text
+Accept ONLY if the source is from {input_city} municipal/city government. Use when Wikidata confirms any of:
+- {input_city} city council, municipality, or local legislative body
+- Official legislative platform (Legistar, Granicus, eScribe, Municode) for {input_city}
+- `.gov` domain for {input_city} local government
 
 **Tier 2 — conditionally_reliable**
 Accept. Use when the source is:
@@ -294,7 +301,8 @@ Reject. Use when:
 - Wikidata data exists but is insufficient to confirm or deny bias
 
 ## Classification Rules (apply in order — first match wins)
-1. Wikidata `instance of` = government agency / municipality / city council → **Tier 1**
+0. Source is NOT from {input_city} municipal/local government → **REJECT** (Tier 3 or 4)
+1. Wikidata `instance of` = government agency / municipality / city council for {input_city} → **Tier 1**
 2. Wikidata `political ideology` field is populated → **Tier 3**
 3. Wikidata `instance of` = think tank / advocacy group / PAC → **Tier 3**
 4. Wikidata confirms established news org, university, or nonpartisan body → **Tier 2**
@@ -305,46 +313,46 @@ Reject. Use when:
 **Input:**
 ```json
 [
-  {
+  {{
     "url": "https://legistar.council.nyc.gov/Legislation.aspx",
     "title": "Int 0837-2024 - NYC Council",
     "organization": "New York City Council",
-    "wikidata": {
+    "wikidata": {{
       "instance_of": "city council",
       "country": "United States",
       "political_ideology": null
-    }
-  },
-  {
+    }}
+  }},
+  {{
     "url": "https://www.heritage.org/municipal-policy/report/123",
     "title": "Heritage Foundation Analysis: City Zoning Laws",
     "organization": "Heritage Foundation",
-    "wikidata": {
+    "wikidata": {{
       "instance_of": "think tank",
       "country": "United States",
       "political_ideology": "conservatism"
-    }
-  }
+    }}
+  }}
 ]
 ```
 
 **Output:**
 ```json
 [
-  {
+  {{
     "url": "https://legistar.council.nyc.gov/Legislation.aspx",
     "organization": "New York City Council",
     "tier": "highly_reliable",
     "rationale": "Official city council legislative database confirmed by Wikidata.",
     "accepted": true
-  },
-  {
+  }},
+  {{
     "url": "https://www.heritage.org/municipal-policy/report/123",
     "organization": "Heritage Foundation",
     "tier": "unreliable",
     "rationale": "Wikidata: think tank with listed political ideology (conservatism).",
     "accepted": false
-  }
+  }}
 ]
 ```
 
@@ -352,13 +360,13 @@ Reject. Use when:
 Return a single JSON array. One object per source. Follow this exact schema:
 ```json
 [
-  {
+  {{
     "url": "string",
     "organization": "string",
     "tier": "highly_reliable" | "conditionally_reliable" | "unreliable" | "unknown",
     "rationale": "string (max 200 characters, cite the specific Wikidata signal used)",
     "accepted": true | false
-  }
+  }}
 ]
 ```
 
@@ -419,25 +427,25 @@ Each gap must name a specific, correctable problem. Reject vague gaps like "rese
 Identify the single highest-priority action the agent should take next. This must be:
 - A concrete tool call or search query, not a general direction
 - Targeted at the most severe unresolved gap
-- Expressed as an instruction (e.g., "Search for '{input_city} city council meeting minutes {date}' to find an official primary source for the zoning amendment.")
+- Expressed as an instruction (e.g., "Search for '{{input_city}} city council meeting minutes {{date}}' to find an official primary source for the zoning amendment.")
 
 ## Output Format
 Return a single raw JSON object. No markdown fences, no preamble.
 ```json
-{
+{{
   "reflection": "string (max 300 words — factual summary of progress and evidence quality)",
   "gaps_identified": [
-    {
+    {{
       "severity": "CRITICAL" | "MODERATE" | "MINOR",
       "gap": "string (specific and actionable)"
-    }
+    }}
   ],
   "next_action": "string (one concrete instruction for the agent's next tool call)"
-}
+}}
 ```
 
 ## Edge Cases
-- If the conversation history is empty or contains no research activity yet: set `reflection` to `"No research conducted yet."`, `gaps_identified` to `[{"severity": "CRITICAL", "gap": "No searches have been run — research has not started."}]`, and `next_action` to the first recommended search query.
+- If the conversation history is empty or contains no research activity yet: set `reflection` to `"No research conducted yet."`, `gaps_identified` to `[{{"severity": "CRITICAL", "gap": "No searches have been run — research has not started."}}]`, and `next_action` to the first recommended search query.
 - If all gaps are resolved and findings meet acceptance criteria: set `next_action` to `"Research complete — compile final output."` and `gaps_identified` to an empty array.
 - If Wikidata context is empty for all organizations: flag each accepted source as a MODERATE gap for unverified classification.
 
@@ -446,8 +454,4 @@ Return a single raw JSON object. No markdown fences, no preamble.
 <conversation_summary>
 {conversation_summary}
 </conversation_summary>
-
-<org_context>
-{org_context}
-</org_context>
 """
