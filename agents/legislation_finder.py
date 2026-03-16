@@ -16,8 +16,8 @@ _agent = BaseReActAgent(
     tools=[web_search, reliability_analysis],
     system_prompt=lambda state: legislation_finder_sys_prompt.format(
         input_city=state.get("city", "Unknown"),
-        last_week_date=(datetime.today() - timedelta(days=7)).strftime("%B %d"),
-        today=datetime.today().strftime("%B %d"),
+        last_week_date=(datetime.today() - timedelta(days=7)).strftime("%B %d, %Y"),
+        today=datetime.today().strftime("%B %d, %Y"),
     ),
 )
 
