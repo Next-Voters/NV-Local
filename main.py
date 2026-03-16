@@ -3,62 +3,75 @@ from dotenv import load_dotenv
 
 from langchain_core.runnables import RunnableLambda
 from langchain_openai import ChatOpenAI
+from rich.console import Console
+from rich.panel import Panel
+from rich.markdown import Markdown
+from rich import box
 
 from agents.legislation_finder import legislation_finder_agent
+
 from utils.models import WriterOutput
 from utils.typed_dicts import ChainData
 from utils.prompts import writer_sys_prompt, note_taker_sys_prompt
+from utils.cli_helpers import show_welcome, LOG
 
 load_dotenv()
 
+console = Console()
 model = ChatOpenAI(model="gpt-4o-mini")
-
 
 def run_legislation_finder(inputs: ChainData) -> ChainData:
     """Run the legislation finder agent as a node."""
     city = inputs.get("city", "Unknown")
-    agent_result = legislation_finder_agent.invoke({"city": city})
+
+    with console.status(f"[bold red]Searching for legislation in {city}..."):
+        agent_result = legislation_finder_agent.invoke({"city": city})
+
     legislation_sources = agent_result.get("reliable_legislation_sources", [])
 
-    # Debug: print all messages from the agent
     messages = agent_result.get("messages", [])
-    print(f"[DEBUG] Agent messages: {len(messages)}")
-    for msg in messages[-5:]:  # Last 5 messages
-        content = (
-            msg.content[:200] if hasattr(msg, "content") and msg.content else str(msg)
-        )
-        print(f"[DEBUG] {type(msg).__name__}: {content}...")
+    LOG(f"Agent steps: {len(messages)}", "dim")
+    for msg in messages[-3:]:
+        msg_type = type(msg).__name__
+        if hasattr(msg, "tool_calls") and msg.tool_calls:
+            tool_names = [tc.get("name", "unknown") for tc in msg.tool_calls]
+            LOG(f"  → {msg_type}: {', '.join(tool_names)}", "yellow")
+        elif msg_type == "ToolMessage":
+            LOG(f"  → {msg_type}: {msg.name}", "green")
+        elif msg_type == "AIMessage" and msg.content:
+            content_preview = msg.content[:80].replace("\n", " ")
+            LOG(f"  → {msg_type}: {content_preview}...", "dim")
 
-    print(
-        f"[DEBUG] Found {len(legislation_sources)} sources for {city}: {legislation_sources[:3]}..."
-    )
+    LOG(f"Found [green]{len(legislation_sources)}[/green] reliable sources", "green")
     return {**inputs, "legislation_sources": legislation_sources}
 
 
 def run_content_retrieval(inputs: ChainData) -> ChainData:
     """Fetch content from legislation sources."""
     legislation_sources = inputs.get("legislation_sources", [])
-    print(f"[DEBUG] Fetching content from {len(legislation_sources)} sources")
-    legislation_content = []
 
-    for source in legislation_sources:
-        # Handle both dict and string formats (defensive)
-        url = source.get("url") if isinstance(source, dict) else source
+    with console.status(
+        f"[bold red]Fetching content from {len(legislation_sources)} sources..."
+    ):
+        legislation_content = []
 
-        if not url:
-            legislation_content.append(f"[Invalid source: {source}]")
-            continue
+        for source in legislation_sources:
+            url = source.get("url") if isinstance(source, dict) else source
 
-        try:
-            markdown_url = f"https://markdown.new/{url}"
-            response = httpx.get(markdown_url, timeout=30, follow_redirects=True)
-            response.raise_for_status()
-            legislation_content.append(response.text)
-        except httpx.HTTPError as e:
-            print(f"[DEBUG] Failed to fetch {url}: {e}")
-            legislation_content.append(f"[Failed to fetch: {url}]")
+            if not url:
+                legislation_content.append(f"[Invalid source: {source}]")
+                continue
 
-    print(f"[DEBUG] Content retrieved: {len(legislation_content)} items")
+            try:
+                markdown_url = f"https://markdown.new/{url}"
+                response = httpx.get(markdown_url, timeout=30, follow_redirects=True)
+                response.raise_for_status()
+                legislation_content.append(response.text)
+            except httpx.HTTPError as e:
+                LOG(f"Failed to fetch: {url}", "red dim")
+                legislation_content.append(f"[Failed to fetch: {url}]")
+
+    LOG(f"Content retrieved: [green]{len(legislation_content)}[/green] items", "green")
     return {**inputs, "legislation_content": legislation_content}
 
 
@@ -75,10 +88,10 @@ def research_note_taker(inputs: ChainData) -> ChainData:
 
     system_prompt = note_taker_sys_prompt.format(raw_content=raw_content)
 
-    # Applying context compaction to ensure context window for LLM remains within bounds of good performance
-    ai_generated_notes = model.invoke(
-        [{"role": "system", "content": system_prompt}],
-    )
+    with console.status("[bold red]Analyzing legislation content..."):
+        ai_generated_notes = model.invoke(
+            [{"role": "system", "content": system_prompt}],
+        )
 
     return {**inputs, "notes": str(ai_generated_notes.content)}
 
@@ -86,17 +99,21 @@ def research_note_taker(inputs: ChainData) -> ChainData:
 def research_summary_writer(inputs: ChainData) -> ChainData:
     """Generate final output using LLM with structured output."""
     notes = inputs.get("notes")
-    print(f"[DEBUG] Notes length: {len(notes) if notes else 0}")
+    LOG(f"Notes length: {len(notes) if notes else 0}", "red")
 
     system_prompt = writer_sys_prompt.format(notes=notes)
 
     structured_model = model.with_structured_output(WriterOutput)
 
-    ai_generated_summary: WriterOutput = structured_model.invoke(
-        [{"role": "system", "content": system_prompt}],
-    )
+    with console.status("[bold red]Generating legislation summary..."):
+        ai_generated_summary: WriterOutput = structured_model.invoke(
+            [{"role": "system", "content": system_prompt}],
+        )
 
-    print(f"[DEBUG] Generated summary: {ai_generated_summary}")
+    LOG(
+        f"Generated: {ai_generated_summary.title if ai_generated_summary else 'None'}",
+        "green",
+    )
 
     if ai_generated_summary is None:
         return {**inputs, "legislation_summary": None}
@@ -105,17 +122,15 @@ def research_summary_writer(inputs: ChainData) -> ChainData:
         ai_generated_summary.title.lower().strip() if ai_generated_summary.title else ""
     )
     no_title_patterns = ("no content", "no recent", "no legislation", "none", "")
-    print(f"[DEBUG] Title: {ai_generated_summary.title}")
-    print(f"[DEBUG] Title lower: '{title_lower}'")
+
     if (
         title_lower in no_title_patterns
         or title_lower.startswith("no ")
         or title_lower.startswith("n/a")
     ):
-        print(f"[DEBUG] Filtering out - matched pattern")
+        LOG("No valid legislation found - filtering out", "yellow")
         return {**inputs, "legislation_summary": None}
 
-    print(f"[DEBUG] Returning legislation_summary: {ai_generated_summary}")
     return {**inputs, "legislation_summary": ai_generated_summary}
 
 
@@ -128,8 +143,6 @@ def report_formatter(inputs: ChainData) -> ChainData:
     """Format a final report using the legislative summary and the politician public statements."""
     legislation_summary = inputs.get("legislation_summary")
     public_statements = inputs.get("politician_public_statements")
-
-    print(f"[DEBUG] report_formatter received: {legislation_summary}")
 
     if legislation_summary is None:
         return {
@@ -151,7 +164,7 @@ def report_formatter(inputs: ChainData) -> ChainData:
         "---",
         "",
         "## Politician Public Statements",
-        "### Coming Soon!"
+        "### Coming Soon!",
         "",
     ]
 
@@ -179,11 +192,24 @@ chain = (
 )
 
 
+# Run CLI app
 if __name__ == "__main__":
-    city = str(input("What city would you like to find legislation in? "))
+    show_welcome()
 
+    city = input("\n➜ Enter city name: ")
+
+    console.print()
     result = chain.invoke({"city": city})
 
-    print("\n=== NV Local Results ===\n")
     report = result.get("markdown_report")
-    print(report)
+
+    console.print()
+    console.print(
+        Panel.fit(
+            "[bold red]NV Local Results[/bold red]",
+            border_style="red",
+            box=box.DOUBLE,
+        )
+    )
+    console.print()
+    console.print(Markdown(report))
