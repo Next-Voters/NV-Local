@@ -11,7 +11,10 @@ available commentary on local issues.
 from dotenv import load_dotenv
 
 from agents.base_agent_template import BaseReActAgent
-from tools.political_commentry import political_figure_finder, blog_search
+from tools.political_commentry import (
+    political_figure_finder,
+    search_political_commentary,
+)
 
 from utils.schemas import PoliticalCommentaryState
 
@@ -21,7 +24,7 @@ load_dotenv()
 
 _agent = BaseReActAgent(
     state_schema=PoliticalCommentaryState,
-    tools=[political_figure_finder, blog_search],
+    tools=[political_figure_finder, search_political_commentary],
     system_prompt="You are a political commentary agent that helps find and analyze political figures and their blogs.",
 )
 

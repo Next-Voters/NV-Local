@@ -1,7 +1,9 @@
 """Tools for the Political Commentry Agent (Agent 2).
 
-Contains: political_figure_finder, blog_search.
+Contains: political_figure_finder, search_political_commentary.
 All tools return Command objects to update LangGraph state.
+
+Uses the official Brave Search MCP server (via Smithery) with Goggles.
 """
 
 from typing import Annotated
@@ -16,6 +18,7 @@ from utils.tools import (
     fetch_canadian_political_figures,
     fetch_american_political_figures,
 )
+from utils.mcp.brave_client import search_political_content, extract_search_results
 
 
 @tool
@@ -104,24 +107,81 @@ def political_figure_finder(
 
 
 @tool
-def blog_search(
-    political_figure_name: Annotated[str, InjectedState("current_political_figure")],
+async def search_political_commentary(
+    query: str,
+    city: Annotated[str, InjectedState("city")],
     tool_call_id: Annotated[str, InjectedToolCallId],
     max_results: int = 5,
 ) -> Command:
-    """Search for a political figure's blog or personal website.
+    """Search for political commentary using the provided query.
 
-    Placeholder tool — searches for official blogs, websites, and campaign
-    sites for a given political figure.
+    Uses Brave Web Search MCP with Goggles to find authoritative political
+    content. Prioritizes government sites, news sources, and political reference
+    sites while filtering out social media and blogs.
 
     Args:
-        political_figure_name: Name of the political figure to search for.
+        query: The search query — e.g. "Austin mayor political commentary" or
+               "John Smith city council news opinion".
+        city: The city context for local political content (from state).
         tool_call_id: Injected by LangGraph — used to associate the ToolMessage.
         max_results: Maximum number of results to return (default 5).
 
     Returns:
-        A Command object that updates the state with blog URLs.
+        A Command object that updates the state with commentary sources.
     """
-    # TODO: Implement blog search via SerpAPI or similar
-    # Should prioritize official domains, campaign sites, and known blog platforms
-    pass
+    try:
+        raw_results = await search_political_content(
+            query=query,
+            city=city,
+            max_results=max_results,
+        )
+
+        results = extract_search_results(raw_results)
+
+        if not results:
+            return Command(
+                update={
+                    "commentary_sources": [],
+                    "messages": [
+                        ToolMessage(
+                            content=f"No political commentary found for query '{query}'.",
+                            tool_call_id=tool_call_id,
+                        )
+                    ],
+                }
+            )
+
+        summary_lines = [
+            f"Found {len(results)} commentary source(s) for query '{query}':"
+        ]
+        for r in results:
+            summary_lines.append(f"  - {r['title']}: {r['url']}")
+
+        return Command(
+            update={
+                "commentary_sources": results,
+                "messages": [
+                    ToolMessage(
+                        content="\n".join(summary_lines),
+                        tool_call_id=tool_call_id,
+                    )
+                ],
+            }
+        )
+
+    except ValueError as e:
+        error_msg = f"Brave Search API key not configured: {e}"
+        return Command(
+            update={
+                "commentary_sources": [],
+                "messages": [ToolMessage(content=error_msg, tool_call_id=tool_call_id)],
+            }
+        )
+    except Exception as e:
+        error_msg = f"Failed to search political commentary: {e}"
+        return Command(
+            update={
+                "commentary_sources": [],
+                "messages": [ToolMessage(content=error_msg, tool_call_id=tool_call_id)],
+            }
+        )
