@@ -1,3 +1,21 @@
+"""Main pipeline orchestration for NV Local voter education tool.
+
+This module defines the LangGraph pipeline for researching local legislation
+and generating markdown reports. It chains together the legislation finder
+agent, content retrieval, note-taking, summary writing, and report formatting.
+
+Key functions:
+    run_legislation_finder: Invokes the legislation finder agent to get sources.
+    run_content_retrieval: Fetches markdown content from legislation URLs.
+    research_note_taker: Analyzes legislation content and creates notes.
+    research_summary_writer: Generates structured summary using LLM.
+    report_formatter: Formats final markdown report.
+    run_pipeline: Executes the full pipeline for a given city.
+
+The pipeline uses a RunnableLambda-based chain that passes data between
+stages via a ChainData dictionary.
+"""
+
 import httpx
 from dotenv import load_dotenv
 

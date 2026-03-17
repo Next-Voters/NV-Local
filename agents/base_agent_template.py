@@ -1,3 +1,18 @@
+"""Base ReAct agent template for NV Local AI agents.
+
+This module provides the BaseReActAgent class that all NV Local agents inherit from.
+It handles reflection handling, tool node setup, and ReAct agent graph construction
+using LangGraph.
+
+Key class:
+    BaseReActAgent: ReAct-style agent with reflection context management.
+                    Supports dynamic system prompts, configurable LLM settings,
+                    and automatic reflection accumulation in agent state.
+
+The agent builds a LangGraph StateGraph with call_model and tool_node nodes,
+implementing the ReAct (Reason + Act) pattern for tool-augmented reasoning.
+"""
+
 from typing import Callable, Union, TypeVar, Type
 from dotenv import load_dotenv
 

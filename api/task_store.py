@@ -1,3 +1,18 @@
+"""Redis-backed task storage for NV Local background jobs.
+
+This module provides task state management for background processing using
+Redis as the storage backend. It handles creating, retrieving, and updating
+task status.
+
+Classes:
+    TaskStatus: Enum representing task lifecycle states (pending, processing,
+                completed, failed).
+    TaskData: Data class holding task metadata and results.
+    RedisTaskStore: Interface for Redis-based task CRUD operations.
+
+The module exposes a singleton task_store instance for use by the API.
+"""
+
 import json
 import os
 import uuid

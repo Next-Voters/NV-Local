@@ -1,3 +1,13 @@
+"""Political commentary agent for NV Local.
+
+This module defines the political_commentry_agent that finds political figures
+and their blog commentary for a given city. It uses the BaseReActAgent template
+with political figure finder and blog search tools.
+
+The agent helps voters identify relevant political figures and their publicly
+available commentary on local issues.
+"""
+
 from dotenv import load_dotenv
 
 from agents.base_agent_template import BaseReActAgent

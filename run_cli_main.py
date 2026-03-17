@@ -1,3 +1,15 @@
+"""CLI wrapper script for NV Local voter education tool.
+
+This module is a simple entry point script that runs the CLI main function.
+It displays the welcome message, prompts for city input, executes the pipeline,
+and renders the resulting markdown report.
+
+Usage:
+    python run_cli_main.py
+
+This script is an alternative to running `python -m cli.main`.
+"""
+
 from rich.console import Console
 from rich.panel import Panel
 from rich.markdown import Markdown
