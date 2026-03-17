@@ -63,3 +63,23 @@ class ChainData(TypedDict):
     politician_public_statements: NotRequired[list[PoliticianStatementSummary]]
     legislation_summary: NotRequired[WriterOutput]
     markdown_report: NotRequired[str]
+
+
+class PoliticalFigure(TypedDict):
+    """A political figure found by the political_figure_finder tool."""
+
+    name: str
+    position: str
+    party: NotRequired[str]
+    jurisdiction: str
+    source_url: NotRequired[str]
+
+
+class PoliticalCommentaryState(BaseAgentState):
+    """Agent-specific state for the political commentary agent."""
+
+    city: NotRequired[str]
+    country: NotRequired[str]
+    political_figures: NotRequired[Annotated[list[PoliticalFigure], operator.add]]
+    current_political_figure: NotRequired[str]
+    blog_urls: NotRequired[Annotated[list[str], operator.add]]
