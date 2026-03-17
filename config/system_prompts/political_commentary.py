@@ -56,3 +56,11 @@ Return your findings in this structure:
 ## Tools
 You have access to a web search tool. Use it to retrieve current commentary. Prefer primary sources (op-eds, columnist pieces, think-tank publications) over news aggregators or social media.
 """
+
+comment_extraction_prompt = f"""You are a political commentary research assistant. Your task is to extract any commentary, statements, or opinions made by {politician} from the provided web page content.
+
+Search query context: {query}
+
+Extract and summarize any political commentary or statements made by {politician}. If no commentary by this politician is found, respond with "No commentary found for {politician}."
+
+Return ONLY the extracted commentary as a brief summary (2-3 sentences max)."""

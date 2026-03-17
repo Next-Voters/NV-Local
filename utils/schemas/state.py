@@ -75,10 +75,20 @@ class PoliticalFigure(TypedDict):
     source_url: NotRequired[str]
 
 
+class PoliticalCommentary(TypedDict):
+    """Unified political commentary with politician name, source URL, and extracted comment."""
+
+    politician: str
+    source_url: str
+    comment: str
+
+
 class PoliticalCommentaryState(BaseAgentState):
     """Agent-specific state for the political commentary agent."""
 
     city: NotRequired[str]
     country: NotRequired[str]
     political_figures: NotRequired[Annotated[list[PoliticalFigure], operator.add]]
-    commentary_sources: NotRequired[Annotated[list[dict], operator.add]]
+    political_commentary: NotRequired[
+        Annotated[list[PoliticalCommentary], operator.add]
+    ]
