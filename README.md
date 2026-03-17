@@ -277,6 +277,6 @@ This project is licensed under the [MIT License](LICENSE) — see the LICENSE fi
 
 **Empowering voters with factual, bias-resistant information about local legislation.**
 
-Made with ❤️ for democratic accountability
+Made with ❤️ by Next Voters
 
 </div>
