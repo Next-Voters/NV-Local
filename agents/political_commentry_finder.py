@@ -8,8 +8,6 @@ The agent helps voters identify relevant political figures and their publicly
 available commentary on local issues.
 """
 
-from dotenv import load_dotenv
-
 from agents.base_agent_template import BaseReActAgent
 from tools.political_commentry_finder import (
     political_figure_finder,
@@ -17,8 +15,6 @@ from tools.political_commentry_finder import (
 )
 
 from utils.schemas import PoliticalCommentaryState
-
-load_dotenv()
 
 # === AGENT CONSTRUCTION ===
 

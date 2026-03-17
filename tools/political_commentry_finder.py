@@ -9,10 +9,8 @@ Uses the official Brave Search MCP server (via Smithery) with Goggles.
 from typing import Annotated
 
 import requests
-from dotenv import load_dotenv
 from langchain_core.messages import ToolMessage
 from langchain_core.tools import tool, InjectedToolCallId
-from langchain_openai import ChatOpenAI
 from langgraph.prebuilt.tool_node import InjectedState
 from langgraph.types import Command
 
@@ -23,12 +21,9 @@ from utils.tools import (
     fetch_american_political_figures,
 )
 from utils.mcp.brave_client import search_political_content, extract_search_results
+from utils.llm import get_mini_llm
 
-load_dotenv()
-
-mini_model = ChatOpenAI(
-    model="gpt-4o-mini", temperature=0.0, max_tokens=1500, timeout=30
-)
+mini_model = get_mini_llm()
 
 
 def fetch_page_content(url: str) -> str:
@@ -48,10 +43,7 @@ def fetch_page_content(url: str) -> str:
 def extract_commentary_with_llm(url: str, politician: str, query: str) -> str:
     """Extract the political commentary from a page using LLM."""
     page_content = fetch_page_content(url)
-    system_prompt = comment_extraction_prompt.format(
-        politician=politician,
-        query=query
-    )
+    system_prompt = comment_extraction_prompt.format(politician=politician, query=query)
     try:
         response = mini_model.invoke(
             [

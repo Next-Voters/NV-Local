@@ -17,20 +17,17 @@ stages via a ChainData dictionary.
 """
 
 import httpx
-from dotenv import load_dotenv
 
 from langchain_core.runnables import RunnableLambda
-from langchain_openai import ChatOpenAI
 
 from agents.legislation_finder import legislation_finder_agent
 from agents.political_commentry_finder import political_commentry_agent
 
 from utils.schemas import WriterOutput, ChainData
+from utils.llm import get_llm, get_structured_llm
 from config.system_prompts import writer_sys_prompt, note_taker_sys_prompt
 
-load_dotenv()
-
-model = ChatOpenAI(model="gpt-4o-mini")
+model = get_llm()
 
 
 def run_legislation_finder(inputs: ChainData) -> ChainData:
@@ -92,7 +89,7 @@ def research_summary_writer(inputs: ChainData) -> ChainData:
 
     system_prompt = writer_sys_prompt.format(notes=notes)
 
-    structured_model = model.with_structured_output(WriterOutput)
+    structured_model = get_structured_llm(WriterOutput)
 
     ai_generated_summary: WriterOutput = structured_model.invoke(
         [{"role": "system", "content": system_prompt}],
@@ -117,13 +114,14 @@ def research_summary_writer(inputs: ChainData) -> ChainData:
 
 
 def run_politician_commentry_finder(inputs: ChainData) -> ChainData:
-    """Run the legislation finder agent as a node."""
+    """Run the political commentary finder agent as a node."""
+    city = inputs.get("city", "Unknown")
 
     agent_result = political_commentry_agent.invoke({"city": city})
 
-    legislation_sources = agent_result.get("reliable_legislation_sources", [])
+    political_commentary = agent_result.get("political_commentary", [])
 
-    return {**inputs, "legislation_sources": legislation_sources}
+    return {**inputs, "political_commentary": political_commentary}
 
 
 def report_formatter(inputs: ChainData) -> ChainData:

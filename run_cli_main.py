@@ -10,6 +10,8 @@ Usage:
 This script is an alternative to running `python -m cli.main`.
 """
 
+from dotenv import load_dotenv
+
 from rich.console import Console
 from rich.panel import Panel
 from rich.markdown import Markdown
@@ -17,6 +19,8 @@ from rich import box
 
 from pipelines.nv_local import chain
 from utils.cli import show_welcome, LOG
+
+load_dotenv()
 
 console = Console()
 

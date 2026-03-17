@@ -57,7 +57,7 @@ Return your findings in this structure:
 You have access to a web search tool. Use it to retrieve current commentary. Prefer primary sources (op-eds, columnist pieces, think-tank publications) over news aggregators or social media.
 """
 
-comment_extraction_prompt = f"""You are a political commentary research assistant. Your task is to extract any commentary, statements, or opinions made by {politician} from the provided web page content.
+comment_extraction_prompt = """You are a political commentary research assistant. Your task is to extract any commentary, statements, or opinions made by {politician} from the provided web page content.
 
 Search query context: {query}
 

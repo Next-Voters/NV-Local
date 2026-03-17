@@ -4,7 +4,7 @@ from pipelines.nv_local import (
     run_content_retrieval,
     research_note_taker,
     research_summary_writer,
-    run_politician_public_statement,
+    run_politician_commentry_finder,
     report_formatter,
 )
 
@@ -14,6 +14,6 @@ __all__ = [
     "run_content_retrieval",
     "research_note_taker",
     "research_summary_writer",
-    "run_politician_public_statement",
+    "run_politician_commentry_finder",
     "report_formatter",
 ]

@@ -9,10 +9,8 @@ Uses the official Brave Search MCP server (via Smithery) with Goggles.
 import json
 from typing import Annotated, Any
 
-from dotenv import load_dotenv
 from langchain_core.messages import ToolMessage
 from langchain_core.tools import tool, InjectedToolCallId
-from langchain_openai import ChatOpenAI
 from langgraph.prebuilt.tool_node import InjectedState
 from langgraph.types import Command
 
@@ -20,11 +18,9 @@ from config.system_prompts import reliability_judgment_prompt
 from utils.tools import search_entity, get_org_classification
 from utils.mcp.brave_client import search_legislation, extract_search_results
 from utils.json_utils import extract_json
+from utils.llm import get_mini_llm
 
-load_dotenv()
-mini_model = ChatOpenAI(
-    model="gpt-4o-mini", temperature=0.0, max_tokens=1500, timeout=30
-)
+mini_model = get_mini_llm()
 
 
 @tool

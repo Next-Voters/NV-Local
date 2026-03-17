@@ -14,16 +14,13 @@ implementing the ReAct (Reason + Act) pattern for tool-augmented reasoning.
 """
 
 from typing import Callable, Union, TypeVar, Type
-from dotenv import load_dotenv
 
-from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, START, END
 from langgraph.prebuilt import ToolNode
 
 from utils.schemas import ReflectionEntry, BaseAgentState
+from utils.llm import get_llm
 from tools.base_agent_tools import reflection_tool
-
-load_dotenv()
 
 StateType = TypeVar("StateType")
 
@@ -58,7 +55,7 @@ class BaseReActAgent:
         self.tools = [reflection_tool] + tools
         self.system_prompt = system_prompt
 
-        self.model = ChatOpenAI(
+        self.model = get_llm(
             model=model_name,
             temperature=temperature,
             max_tokens=max_tokens,
