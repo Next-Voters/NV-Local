@@ -81,6 +81,4 @@ class PoliticalCommentaryState(BaseAgentState):
     city: NotRequired[str]
     country: NotRequired[str]
     political_figures: NotRequired[Annotated[list[PoliticalFigure], operator.add]]
-    current_political_figure: NotRequired[str]
-    blog_urls: NotRequired[Annotated[list[str], operator.add]]
     commentary_sources: NotRequired[Annotated[list[dict], operator.add]]
