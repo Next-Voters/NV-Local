@@ -11,3 +11,5 @@ redis
 pydantic
 requests
 pyyaml
+supabase
+markdown

@@ -22,6 +22,18 @@ class ReflectionEntry(BaseModel):
     )
 
 
+class IndividualReliabilityAnalysis(BaseModel):
+    """Reliability analysis for a source."""
+
+    url: Optional[str] = Field(default=None, description="URL of the source")
+    reliability_score: Optional[float] = Field(
+        default=None, description="Reliability score 0-1"
+    )
+    reasoning: Optional[str] = Field(
+        default=None, description="Reasoning for the score"
+    )
+
+
 class WriterOutput(BaseModel):
     """Structured reflection output produced by the reflection tool."""
 

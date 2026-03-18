@@ -25,6 +25,7 @@ from agents.political_commentry_finder import political_commentry_agent
 
 from utils.schemas import WriterOutput, ChainData
 from utils.llm import get_llm, get_structured_llm
+from utils.email_sender import send_email_to_subscribers
 from config.system_prompts import writer_sys_prompt, note_taker_sys_prompt
 
 model = get_llm()
@@ -174,6 +175,7 @@ chain = (
     | RunnableLambda(research_summary_writer)
     | RunnableLambda(run_politician_commentry_finder)
     | RunnableLambda(report_formatter)
+    | RunnableLambda(send_email_to_subscribers)
 )
 
 
