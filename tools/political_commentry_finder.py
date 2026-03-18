@@ -293,22 +293,6 @@ async def search_political_social_media(
     """
     PREVIEW_MAX_LENGTH = 80
 
-    try:
-        credentials = get_twitter_credentials()
-    except ValueError as e:
-        return Command(
-            update={
-                "social_media_posts": [],
-                "messages": [
-                    ToolMessage(
-                        content=f"Twitter API credentials not configured: {e}. "
-                        "Set TWITTER_API_KEY and TWITTER_BEARER_TOKEN environment variables.",
-                        tool_call_id=tool_call_id,
-                    )
-                ],
-            }
-        )
-
     if not politician or not politician.strip():
         return Command(
             update={
