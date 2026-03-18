@@ -83,6 +83,17 @@ class PoliticalCommentary(TypedDict):
     comment: str
 
 
+class SocialMediaPost(TypedDict):
+    """A social media post from a politician's official account."""
+
+    politician: str
+    platform: str
+    tweet_id: NotRequired[str]
+    text: str
+    created_at: NotRequired[str]
+    engagement: NotRequired[dict]
+
+
 class PoliticalCommentaryState(BaseAgentState):
     """Agent-specific state for the political commentary agent."""
 
@@ -92,3 +103,5 @@ class PoliticalCommentaryState(BaseAgentState):
     political_commentary: NotRequired[
         Annotated[list[PoliticalCommentary], operator.add]
     ]
+    research_notes: NotRequired[str]
+    social_media_posts: NotRequired[Annotated[list[SocialMediaPost], operator.add]]

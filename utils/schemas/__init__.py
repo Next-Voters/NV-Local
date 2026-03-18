@@ -14,6 +14,8 @@ from utils.schemas.state import (
     PoliticianStatementSummary,
     ChainData,
     PoliticalFigure,
+    PoliticalCommentary,
+    SocialMediaPost,
     PoliticalCommentaryState,
 )
 
@@ -29,5 +31,7 @@ __all__ = [
     "PoliticianStatementSummary",
     "ChainData",
     "PoliticalFigure",
+    "PoliticalCommentary",
+    "SocialMediaPost",
     "PoliticalCommentaryState",
 ]
