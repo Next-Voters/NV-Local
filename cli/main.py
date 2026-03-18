@@ -1,10 +1,21 @@
+"""Command-line interface for NV Local voter education tool.
+
+This module provides the CLI entry point using Rich for formatted console output.
+It system_prompts the user for a city name, invokes the pipeline, and displays the
+resulting markdown report in a formatted panel.
+
+Key function:
+    main: Displays welcome message, collects city input, runs pipeline, and
+          renders the markdown report.
+"""
+
 from rich.console import Console
 from rich.panel import Panel
 from rich.markdown import Markdown
 from rich import box
 
 from pipelines.nv_local import chain
-from utils.cli_helpers import show_welcome
+from utils.cli import show_welcome
 
 console = Console()
 

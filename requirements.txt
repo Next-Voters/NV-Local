@@ -12,3 +12,4 @@ redis
 python-multipart
 pydantic
 requests
+pyyaml

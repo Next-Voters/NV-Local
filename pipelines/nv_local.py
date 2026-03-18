@@ -1,18 +1,33 @@
+"""Main pipeline orchestration for NV Local voter education tool.
+
+This module defines the LangGraph pipeline for researching local legislation
+and generating markdown reports. It chains together the legislation finder
+agent, content retrieval, note-taking, summary writing, and report formatting.
+
+Key functions:
+    run_legislation_finder: Invokes the legislation finder agent to get sources.
+    run_content_retrieval: Fetches markdown content from legislation URLs.
+    research_note_taker: Analyzes legislation content and creates notes.
+    research_summary_writer: Generates structured summary using LLM.
+    report_formatter: Formats final markdown report.
+    run_pipeline: Executes the full pipeline for a given city.
+
+The pipeline uses a RunnableLambda-based chain that passes data between
+stages via a ChainData dictionary.
+"""
+
 import httpx
-from dotenv import load_dotenv
 
 from langchain_core.runnables import RunnableLambda
-from langchain_openai import ChatOpenAI
 
 from agents.legislation_finder import legislation_finder_agent
+from agents.political_commentry_finder import political_commentry_agent
 
-from utils.models import WriterOutput
-from utils.typed_dicts import ChainData
-from utils.prompts import writer_sys_prompt, note_taker_sys_prompt
+from utils.schemas import WriterOutput, ChainData
+from utils.llm import get_llm, get_structured_llm
+from config.system_prompts import writer_sys_prompt, note_taker_sys_prompt
 
-load_dotenv()
-
-model = ChatOpenAI(model="gpt-4o-mini")
+model = get_llm()
 
 
 def run_legislation_finder(inputs: ChainData) -> ChainData:
@@ -74,7 +89,7 @@ def research_summary_writer(inputs: ChainData) -> ChainData:
 
     system_prompt = writer_sys_prompt.format(notes=notes)
 
-    structured_model = model.with_structured_output(WriterOutput)
+    structured_model = get_structured_llm(WriterOutput)
 
     ai_generated_summary: WriterOutput = structured_model.invoke(
         [{"role": "system", "content": system_prompt}],
@@ -98,9 +113,15 @@ def research_summary_writer(inputs: ChainData) -> ChainData:
     return {**inputs, "legislation_summary": ai_generated_summary}
 
 
-def run_politician_public_statement(inputs: ChainData) -> ChainData:
-    """Run the politican public statement finder agent as a node."""
-    return {**inputs, "politician_public_statements": []}
+def run_politician_commentry_finder(inputs: ChainData) -> ChainData:
+    """Run the political commentary finder agent as a node."""
+    city = inputs.get("city", "Unknown")
+
+    agent_result = political_commentry_agent.invoke({"city": city})
+
+    political_commentary = agent_result.get("political_commentary", [])
+
+    return {**inputs, "politician_public_statements": political_commentary}
 
 
 def report_formatter(inputs: ChainData) -> ChainData:
@@ -151,7 +172,7 @@ chain = (
     | RunnableLambda(run_content_retrieval)
     | RunnableLambda(research_note_taker)
     | RunnableLambda(research_summary_writer)
-    | RunnableLambda(run_politician_public_statement)
+    | RunnableLambda(run_politician_commentry_finder)
     | RunnableLambda(report_formatter)
 )
 

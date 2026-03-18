@@ -1,3 +1,17 @@
+"""FastAPI server for NV Local background task processing.
+
+This module provides a REST API for submitting city analysis tasks that run
+in the background. Tasks are executed asynchronously using a ThreadPoolExecutor
+and their status is tracked via Redis.
+
+Key endpoints:
+    POST /api/background/submit: Submit a new city analysis task.
+    GET /api/background/{task_id}: Get task status and result.
+    GET /health: Health check endpoint.
+
+The server uses the task_store module for Redis-backed task state management.
+"""
+
 import os
 import uuid
 from concurrent.futures import ThreadPoolExecutor

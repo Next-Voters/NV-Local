@@ -1,10 +1,26 @@
+"""CLI wrapper script for NV Local voter education tool.
+
+This module is a simple entry point script that runs the CLI main function.
+It displays the welcome message, system_prompts for city input, executes the pipeline,
+and renders the resulting markdown report.
+
+Usage:
+    python run_cli_main.py
+
+This script is an alternative to running `python -m cli.main`.
+"""
+
+from dotenv import load_dotenv
+
 from rich.console import Console
 from rich.panel import Panel
 from rich.markdown import Markdown
 from rich import box
 
 from pipelines.nv_local import chain
-from utils.cli_helpers import show_welcome, LOG
+from utils.cli import show_welcome, LOG
+
+load_dotenv()
 
 console = Console()
 
