@@ -121,7 +121,7 @@ def run_politician_commentry_finder(inputs: ChainData) -> ChainData:
 
     political_commentary = agent_result.get("political_commentary", [])
 
-    return {**inputs, "political_commentary": political_commentary}
+    return {**inputs, "politician_public_statements": political_commentary}
 
 
 def report_formatter(inputs: ChainData) -> ChainData:
