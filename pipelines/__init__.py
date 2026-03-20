@@ -1,4 +1,4 @@
-from pipelines.nv_local import chain, run_pipeline
+from pipelines.nv_local import chain, run_markdown_report, run_pipeline
 from pipelines.node.legislation_finder import (
     run_legislation_finder,
     legislation_finder_chain,
@@ -19,6 +19,7 @@ from pipelines.node.email_sender import send_email_to_subscribers
 __all__ = [
     "chain",
     "run_pipeline",
+    "run_markdown_report",
     "run_legislation_finder",
     "run_content_retrieval",
     "research_note_taker",

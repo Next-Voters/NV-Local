@@ -17,7 +17,7 @@ from rich.panel import Panel
 from rich.markdown import Markdown
 from rich import box
 
-from pipelines.nv_local import chain
+from pipelines.nv_local import run_pipeline
 from utils.cli import show_welcome, LOG
 
 load_dotenv()
@@ -30,7 +30,7 @@ if __name__ == "__main__":
     city = input("\n➜ Enter city name: ")
 
     console.print()
-    result = chain.invoke({"city": city})
+    result = run_pipeline(city)
 
     report = result.get("markdown_report")
 

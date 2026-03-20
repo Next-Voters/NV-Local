@@ -63,9 +63,21 @@
 
 5. **Run the system**
    ```bash
-   python main.py
+   NV_CITY="Austin" python main.py
    ```
-   Enter a city name (e.g., "Austin", "Toronto") to investigate recent municipal legislation.
+   Provide your target municipality either via the `--city` / `-c` flag or by setting `NV_CITY`. The markdown report prints to stdout, `-o <path>` saves it to a file, and `-q` suppresses the printed output.
+
+### 🐳 Container
+
+- Build the updated CLI container:
+  ```bash
+  docker build -t next-voters-local -f docker/Dockerfile .
+  ```
+- Run the container with a city override:
+  ```bash
+  docker run --rm -e NV_CITY="Toronto" next-voters-local
+  ```
+The image executes `main.py` by default, so the pipeline runs automatically and streams the markdown summary to stdout.
 
 ---
 ### Key Design Principles
